@@ -178,7 +178,13 @@
       "right": 0,
       "bottom": 0
     },
-    "itemId": "074023b016e542608cd9e25fb863ea1b",
+    "basemaps": [{
+      "label": "Arcgis",
+      "url": "http://localhost:6080/arcgis/rest/services/CBJYQ/YuLinTuMap_CBJYQ_Overview/MapServer",
+      "type": "dynamic"
+    }
+    ],
+    "itemId": "",
     "mapOptions": {
       "extent": {
         "xmin": 27.25,

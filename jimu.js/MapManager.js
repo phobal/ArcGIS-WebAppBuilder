@@ -1,18 +1,3 @@
-///////////////////////////////////////////////////////////////////////////
-// Copyright © 2014 Esri. All Rights Reserved.
-//
-// Licensed under the Apache License Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//    http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
-///////////////////////////////////////////////////////////////////////////
 
 define(['dojo/_base/declare',
   'dojo/_base/lang',
@@ -30,12 +15,11 @@ define(['dojo/_base/declare',
   'esri/SpatialReference',
   'esri/geometry/Extent',
   'require',
-  'jimu/portalUrlUtils',
   './utils',
-  './dijit/LoadingShelter'
+  './dijit/LoadingShelter',
 ], function(declare, lang, array, html, topic, on, aspect, keys, agolUtils, InfoWindow,
   PopupMobile, InfoTemplate, esriRequest, SpatialReference, Extent, require,
-  portalUrlUtils, jimuUtils, LoadingShelter) {
+  jimuUtils, LoadingShelter) {
   /* global jimuConfig */
   var instance = null,
     clazz = declare(null, {
@@ -61,7 +45,24 @@ define(['dojo/_base/declare',
         this._showMap(this.appConfig);
       },
 
-      _showMap: function(appConfig) {
+      _show2DLayersMap: function(appConfig) {
+
+        require(['esri/map'], lang.hitch(this, function(Map) {
+          var map = new Map(this.mapDivId, this._processMapOptions(appConfig.map.mapOptions));
+          this._visitConfigMapLayers(appConfig, lang.hitch(this, function(layerConfig) {
+            this.createLayer(map, '2D', layerConfig);
+          }));
+          this._publishMapEvent(map);
+        }));
+      },
+
+      onWindowResize: function() {
+        if (this.map && this.map.resize) {
+          this.map.resize();
+          this.resetInfoWindow();
+        }
+      },
+ _showMap: function(appConfig) {
         // console.timeEnd('before map');
         console.time('Load Map');
         this.loading = new LoadingShelter();
@@ -75,21 +76,9 @@ define(['dojo/_base/declare',
             this._show3DLayersMap(appConfig);
           }
         } else {
-          if (appConfig.map.itemId) {
-            this._show2DWebMap(appConfig);
-          } else {
-            console.log('No webmap found. Please set map.itemId in config.json.');
-          }
+            this._show2DLayersMap(appConfig);
         }
       },
-
-      onWindowResize: function() {
-        if (this.map && this.map.resize) {
-          this.map.resize();
-          this.resetInfoWindow();
-        }
-      },
-
       resetInfoWindow: function() {
         if (!this.previousInfoWindow && this.map && this.map.infoWindow) {
           this.previousInfoWindow = this.map.infoWindow;
@@ -114,7 +103,48 @@ define(['dojo/_base/declare',
         }
       },
 
-      onChangeMapPosition: function(position) {
+      _visitConfigMapLayers: function(appConfig, cb) {
+        array.forEach(appConfig.map.basemaps, function(layerConfig, i) {
+          layerConfig.isOperationalLayer = false;
+          cb(layerConfig, i);
+        }, this);
+
+        array.forEach(appConfig.map.operationallayers, function(layerConfig, i) {
+          layerConfig.isOperationalLayer = true;
+          cb(layerConfig, i);
+        }, this);
+      },
+      onAppConfigChanged: function(appConfig, reason, mapConfig, otherOptions) {
+        if (reason !== 'mapChange') {
+          this.appConfig = appConfig;
+          return;
+        }
+        if (otherOptions && otherOptions.reCreateMap === false) {
+          this.appConfig = appConfig;
+          return;
+        }
+        if (this.map) {
+          topic.publish('beforeMapDestory', this.map);
+          this.map.destroy();
+        }
+        this._showMap(appConfig);
+        this.appConfig = appConfig;
+      },
+      _show3DLayersMap: function(appConfig) {
+        require(['esri3d/Map'], lang.hitch(this, function(Map) {
+          var initCamera = appConfig.map.mapOptions.camera,
+            map;
+          map = new Map(this.mapDivId, {
+            camera: initCamera
+          });
+          this._visitConfigMapLayers(appConfig, lang.hitch(this, function(layerConfig) {
+            this.createLayer(map, '3D', layerConfig);
+          }));
+          map.usePlugin = Map.usePlugin;
+          this._publishMapEvent(map);
+        }));
+      },
+ onChangeMapPosition: function(position) {
         var mapStyle = html.getComputedStyle(html.byId(this.map.id));
         var oldPosStyle = {
           top: mapStyle.top,
@@ -134,34 +164,6 @@ define(['dojo/_base/declare',
           this.map.resize();
         }
       },
-
-      _visitConfigMapLayers: function(appConfig, cb) {
-        array.forEach(appConfig.map.basemaps, function(layerConfig, i) {
-          layerConfig.isOperationalLayer = false;
-          cb(layerConfig, i);
-        }, this);
-
-        array.forEach(appConfig.map.operationallayers, function(layerConfig, i) {
-          layerConfig.isOperationalLayer = true;
-          cb(layerConfig, i);
-        }, this);
-      },
-
-      _show3DLayersMap: function(appConfig) {
-        require(['esri3d/Map'], lang.hitch(this, function(Map) {
-          var initCamera = appConfig.map.mapOptions.camera,
-            map;
-          map = new Map(this.mapDivId, {
-            camera: initCamera
-          });
-          this._visitConfigMapLayers(appConfig, lang.hitch(this, function(layerConfig) {
-            this.createLayer(map, '3D', layerConfig);
-          }));
-          map.usePlugin = Map.usePlugin;
-          this._publishMapEvent(map);
-        }));
-      },
-
       _show3DWebScene: function(appConfig) {
         this._getWebsceneData(appConfig.map.itemId).then(lang.hitch(this, function(data) {
           require(['esri3d/Map'], lang.hitch(this, function(Map) {
@@ -215,12 +217,6 @@ define(['dojo/_base/declare',
       },
 
       _show2DWebMap: function(appConfig) {
-        //should use appConfig instead of this.appConfig, because appConfig is new.
-        // if (appConfig.portalUrl) {
-        //   var url = portalUrlUtils.getStandardPortalUrl(appConfig.portalUrl);
-        //   agolUtils.arcgisUrl = url + "/sharing/content/items/";
-        // }
-
         var mapOptions = this._processMapOptions(appConfig.map.mapOptions);
 
         if ((!appConfig.map.mapOptions || !appConfig.map.mapOptions.extent) &&
@@ -296,54 +292,76 @@ define(['dojo/_base/declare',
           '3D_3dmodle': 'esri3d/layers/SceneLayer'
         };
 
-        require([layMap[maptype + '_' + layerConfig.type]], lang.hitch(this, function(layerClass) {
-          var layer, infoTemplate, options = {},
-            keyProperties = ['label', 'url', 'type', 'icon', 'infoTemplate', 'isOperationalLayer'];
-          for (var p in layerConfig) {
-            if (keyProperties.indexOf(p) < 0) {
-              options[p] = layerConfig[p];
-            }
-          }
-          if (layerConfig.infoTemplate) {
-            infoTemplate = new InfoTemplate(layerConfig.infoTemplate.title,
-              layerConfig.infoTemplate.content);
-            options.infoTemplate = infoTemplate;
-
-            layer = new layerClass(layerConfig.url, options);
-
-            if (layerConfig.infoTemplate.width && layerConfig.infoTemplate.height) {
-              aspect.after(layer, 'onClick', lang.hitch(this, function() {
-                map.infoWindow.resize(layerConfig.infoTemplate.width,
-                  layerConfig.infoTemplate.height);
-              }), true);
-            }
-          } else {
-            layer = new layerClass(layerConfig.url, options);
-          }
-
-          layer.isOperationalLayer = layerConfig.isOperationalLayer;
-          layer.label = layerConfig.label;
-          layer.icon = layerConfig.icon;
+        var layer;
+        if (layerConfig.type == "googlemap" || layerConfig.type == "googleimage" || layerConfig.type == "googletrain") {
+        /*  layer = new GoogleLayer();//
+          layer.type = layerConfig.type;
           map.addLayer(layer);
-        }));
-      },
+          if (layerConfig.type == "googleimage")
+          {
+            layer = new GoogleLayer();//
+            layer.type = "googlepoi";
+            map.addLayer(layer);
+          }
+        }else if(layerConfig.type == "tianditumap" || layerConfig.type == "tiandituimage" || layerConfig.type == "tianditutrain")
+        {
+          layer = new TianDiTuLayer();//
+          layer.type = layerConfig.type;
+          map.addLayer(layer);
+          if (layerConfig.type == "tianditumap")
+          {
+            layer = new TianDiTuLayer();//
+            layer.type = "tianditumapi";
+            map.addLayer(layer);
+          } else if (layerConfig.type == "tiandituimage")
+          {
+            layer = new TianDiTuLayer();//
+            layer.type = "tiandituimagei";
+            map.addLayer(layer);
+          }else if (layerConfig.type == "tianditutrain")
+          {
+            layer = new TianDiTuLayer();//
+            layer.type = "tianditutraini";
+            map.addLayer(layer);
+          }*/
+        }
+        else {
+          //以前的这个是
+          require([layMap[maptype + '_' + layerConfig.type]], lang.hitch(this, function(layerClass) {
+            var infoTemplate, options = {},
+                keyProperties = ['label', 'url', 'type', 'icon', 'infoTemplate', 'isOperationalLayer'];
+            for (var p in layerConfig) {
+              if (keyProperties.indexOf(p) < 0) {
+                options[p] = layerConfig[p];
+              }
+            }
+            if (layerConfig.infoTemplate) {
+              infoTemplate = new InfoTemplate(layerConfig.infoTemplate.title,
+                  layerConfig.infoTemplate.content);
+              options.infoTemplate = infoTemplate;
 
-      onAppConfigChanged: function(appConfig, reason, mapConfig, otherOptions) {
-        if (reason !== 'mapChange') {
-          this.appConfig = appConfig;
-          return;
+              layer = new layerClass(layerConfig.url, options);
+
+              if (layerConfig.infoTemplate.width && layerConfig.infoTemplate.height) {
+                aspect.after(layer, 'onClick', lang.hitch(this, function() {
+                  map.infoWindow.resize(layerConfig.infoTemplate.width,
+                      layerConfig.infoTemplate.height);
+                }), true);
+              }
+            } else {
+              layer = new layerClass(layerConfig.url, options);
+            }
+
+            layer.isOperationalLayer = layerConfig.isOperationalLayer;
+            layer.label = layerConfig.label;
+            layer.icon = layerConfig.icon;
+            map.addLayer(layer);
+          }));
         }
-        if (otherOptions && otherOptions.reCreateMap === false) {
-          this.appConfig = appConfig;
-          return;
-        }
-        if (this.map) {
-          topic.publish('beforeMapDestory', this.map);
-          this.map.destroy();
-        }
-        this._showMap(appConfig);
-        this.appConfig = appConfig;
+
       }
+
+     
 
     });
 
