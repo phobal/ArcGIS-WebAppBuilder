@@ -15,7 +15,7 @@
   "title": "农村土地承包经营权",
   "subtitle": "",
   "logo": "images/app-logo.png",
-  "geometryService": "http://tools.arcgisonline.cn/arcgis/rest/services/Utilities/Geometry/GeometryServer",
+  "geometryService": "https://localhost:6443/arcgis/rest/services/Utilities/Geometry/GeometryServer",
   "links": [],
   "widgetOnScreen": {
     "widgets": [
@@ -106,7 +106,7 @@
         "uri": "widgets/OverviewMap/Widget",
         "position": {
           "right": 0,
-          "top": 0
+          "bottom": 0
         },
         "version": "1.1",
         "id": "widgets/OverviewMap/Widget_8",
@@ -180,7 +180,7 @@
     },
     "basemaps": [{
       "label": "Arcgis",
-      "url": "http://localhost/arcgis/rest/services/CBJYQ/YuLinTuMap_CBJYQ_Overview/MapServer",
+      "url": "https://localhost/arcgis/rest/services/CBJYQ/YuLinTuMap_CBJYQ_Overview/MapServer",
       "type": "dynamic"
     }
     ],
@@ -194,7 +194,8 @@
         "spatialReference": {
           "wkid": 4326
         }
-      }
+      },
+      "logo":false
     },
     "id": "map",
     "portalUrl": "https://desktop-eentlor.phobo.com/arcgis"
@@ -224,7 +225,8 @@
         "version": "1.1",
         "uri": "widgets/Bookmark/Widget",
         "index": 3,
-        "id": "widgets/Bookmark/Widget_17"
+        "id": "widgets/Bookmark/Widget_17",
+        "openAtStart":true
       },
       {
         "name": "Chart",

@@ -105,7 +105,7 @@ define(['dojo/_base/declare',
 
       _visitConfigMapLayers: function(appConfig, cb) {
         array.forEach(appConfig.map.basemaps, function(layerConfig, i) {
-          layerConfig.isOperationalLayer = false;
+         layerConfig.isOperationalLayer = true; //允许图层控制底图
           cb(layerConfig, i);
         }, this);
 
