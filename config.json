@@ -46,30 +46,6 @@
         "label": "比例尺"
       },
       {
-        "uri": "widgets/Geocoder/Widget",
-        "position": {
-          "left": 45,
-          "top": 5
-        },
-        "version": "1.1",
-        "id": "widgets/Geocoder/Widget_3",
-        "positionRelativeTo": "map",
-        "name": "Geocoder",
-        "label": "地理编码器"
-      },
-      {
-        "uri": "widgets/Coordinate/Widget",
-        "position": {
-          "left": 200,
-          "bottom": 20
-        },
-        "version": "1.1",
-        "id": "widgets/Coordinate/Widget_4",
-        "positionRelativeTo": "map",
-        "name": "Coordinate",
-        "label": "坐标"
-      },
-      {
         "position": {
           "left": 55,
           "top": 45,
@@ -269,15 +245,6 @@
         "id": "widgets/Geoprocessing/Widget_22"
       },
       {
-        "name": "LayerList",
-        "label": "图层列表",
-        "version": "1.1",
-        "uri": "widgets/LayerList/Widget",
-        "index": 9,
-        "id": "widgets/LayerList/Widget_23",
-        "config": "configs/LayerList/config_图层列表.json"
-      },
-      {
         "name": "Legend",
         "label": "图例",
         "version": "1.1",
@@ -309,6 +276,14 @@
         "uri": "widgets/Query/Widget",
         "index": 13,
         "id": "widgets/Query/Widget_27"
+      },
+      {
+        "name": "MyWidget",
+        "label": "自定义部件",
+        "version": "1.1",
+        "uri": "widgets/MyWidget/Widget",
+        "index": 15,
+        "id": "widgets/MyWidget/Widget_29"
       }
     ],
     "groups": []
