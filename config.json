@@ -11,7 +11,7 @@
     ],
     "version": "1.1"
   },
-  "portalUrl": "http://www.arcgisonline.cn/portal",
+  "portalUrl": "https://desktop-eentlor.phobo.com/arcgis",
   "title": "农村土地承包经营权",
   "subtitle": "",
   "logo": "images/app-logo.png",
@@ -180,7 +180,7 @@
     },
     "basemaps": [{
       "label": "Arcgis",
-      "url": "http://localhost:6080/arcgis/rest/services/CBJYQ/YuLinTuMap_CBJYQ_Overview/MapServer",
+      "url": "http://localhost/arcgis/rest/services/CBJYQ/YuLinTuMap_CBJYQ_Overview/MapServer",
       "type": "dynamic"
     }
     ],
@@ -197,7 +197,7 @@
       }
     },
     "id": "map",
-    "portalUrl": "https://www.arcgisonline.cn/portal/"
+    "portalUrl": "https://desktop-eentlor.phobo.com/arcgis"
   },
   "widgetPool": {
     "panel": {
